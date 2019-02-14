@@ -93,4 +93,4 @@ schimba liniile consecutive j-1 si j (se interschimba valorile de pe b,c,s si d 
 salva intr-un vector aux)
 - se verifica daca ultima linie a SST obtinut e 0 (d(n)==0), caz in care aleg x(n)=1 sau nu 0, caz in care
 x(n)=b(n)/d(n)
-- se determina x(i) pentru i=n-1:-1:1
+- se determina x(i) pentru i= n-1 : -1 : 1
