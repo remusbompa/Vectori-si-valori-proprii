@@ -1,0 +1,96 @@
+1) function P=ValoriPolinoame(d,s,val_lambda)
+- primeste ca parametri diagonala d, supradiagonala s si o valoare reala val_lambda
+- intoarce un vector P cu valoarea fiecarui polinom din sirul de polinoame Sturm
+- functia este apelata recursiv ( P=ValoriPolinoame(d1,s1,val_lambda) ), noua diagonala si supradiagonala
+pierzandu-si ultimile elemente
+- cand se revine in apelul curent, se adauga la sfarsitul vectorului polinomul caracteristic folosind relatia
+de recurenta (3) ( P=[P (d(n)-val_lambda)*P(n)-s(n-1)^2*P(n-1)] )
+- recursivitatea se termina cand diagonala isi pierde toate elementele (n==0), polinomul caracteristic fiind
+1 ( P=[1 P] ) sau aceasta ajunge doar la un element (n==1) ,polinoamele caracteristice fiind 1(P0) si d1-lambda
+(P1) ( P=[1 d(1)-val_lambda P] )
+
+2) function numvp=NrValProprii(d,s,val_lambda)
+- primeste ca parametri diagonala principala d, supradiagonala s si o valoare reala val_lambda
+- intoarcea un numar numvp de valori proprii ale matricei tridiagonale simetrice mai mici decat val_lambda
+- se determina vectorul valorilor polinoamelor din sirul Sturm pentru valoarea val_lambda
+- se numara polinoamele consecutive care au semn contrar ( if P(i)*P(i+1)<0 numvp++ )
+- daca polinomul este 0, se numara polinomul si se trece la urmatoarele doua polinoame ( elseif P(i+1)==0 
+numvp++;i++; ) (Din observatia 2,semnul lui P(i) se considera ca fiind opusul lui P(i-1),dar din formula (3)
+cum P(i+1)=(d(i+1)-val_lambda)*P(i)-s(i)^2*P(i-1) iar P(i)=0 => P(i+1)=-s(i)^2*P(i-1) deci P(i+1) va avea si
+el semnul opus lui P(i-1) si acelasi semn ca P(i), deci se poate sari peste perechea P(i),P(i+1) (i++) )
+
+3)function [limita_inf limita_sup]=LimiteValProprii(d,s)
+- primeste ca parametri diagonala principala d si supradiagonala s
+- are ca rezultat limita superioara si cea inferioara intre care sunt cuprinse valorile proprii ale unei 
+matrice tridiagonale simetrice
+- aplic teorema lui Gershgorin iar cum t(i) este suma elementelor de pe linia i,fara cel de pe diagonala princi-
+pala, t(i) va fi in acest caz s(i-1)+s(i) pentru i=1:n
+- limita_inf va fi minimul elementelor vectorului d-t
+- limita_sup va fi maximul elementelor vectorului d+t
+
+4) function r=IntervaleValProprii(d,s,m)
+- primeste ca parametri diagonala principala d, supradiagonala s si numarul natural m
+- intoarce un vector r de dimensiune m+1 a carui valori separa cele mai mici m valori proprii ale matricei
+- daca m depaseste nr max de valori proprii(length(d)), atunci se ia m=length(d)
+- se salveaza in r(1) si r2 limitele valorilor proprii ([r(1) r2]=LimiteValProprii(d,s);)
+- pentru k=m:-1:1 se stabilesc pe rand limitele suprioare (r(m+1),r(m), ..., r(2)) pentru care sunt exact k
+valori proprii mai mici ca r(k+1) astfel:
+	-se stabileste mijlocul intervalului (r(1),r2) (mij=r(1)+(r2-r(1))/2;)
+	-se afla lungimea h a jumate din intervalul (r(1),r2) (h=(r2-r(1))/2;)
+	-se afla numarul de valori proprii mai mici ca mij (numvp=NrValProprii(d,s,mij);)
+	-cat timp acest numar este diferit de k, daca numvp>k =>sunt prea multe valori proprii iar mij se muta
+							la stanga cu h/2 (elseif numvp>k mij=mij-h;)
+						daca numvp<k =>sunt prea putine valori proprii iar mij se muta
+							la dreapta cu h/2 (if numvp<k mij=mij+h;)
+- pentru a trece la iteratia urmatoare se salveaza mij in r(k+1) si r2
+
+5) function vp=CalculezValProprii(d,s,m,tol)
+- primeste ca parametri diagonala d, supradiagonala s, limita pentru numarul de valori proprii m si precizia 
+determinarii tol folosita in metoda bisectiei
+- intoarce un vector vp de dimensiune m care contine cele mai mici m valori proprii
+- se apeleaza functia IntervaleValProprii pentru a afla intervalele folosite in metoda bisectiei 
+(r=IntervaleValProprii(d,s,m))
+- din definitia (2) a polinomului caracteristic, se observa ca P(n)=det(A-lambda*In) iar valorile proprii sunt
+radacinile ecuatiei det(A-lambda*In)=0 => sunt radacinile ecuatiei P(n)=0. De aici rezulta ca functia f din 
+metoda bisectiei poate fi considerata ValoriPolinoame(d,s,x)(length (d) + 1) (ultimul element (P(n)) al sirului
+Sturm (intrucat sirul incepe cu P(0) vor fi length(d)+1 elemente si nu n=length(d) elemente) )
+- cum variabila din functia ValoriPolinoame(d,s,val_lambda)(length(d)+1) este val_lambda, voi inlocui in metoda
+bisectiei f(x) cu ValoriPolinoame(d,s,x)(length (d) + 1) pentru orice x, iar functia Bisectie va primi in plus
+parametrii d si s.
+- pentru fiecare pereche de intervale, calculez valoarea proprie din ea cu ajutorul metodei bisectiei, implemen-
+tata in functia: function p=Bisectie(a,b,d,s,tol) din fisierul Bisectie.m (vp(i)=Bisectie(r(i),r(i+1),d,s,tol) )
+- functia Bisectie determina mijlocul intervalului [a,b] (p) si daca modulul lui f(p) sau a lui b-a nu a atins
+tol (nu s-au apropiat de zero cu precizia tol) se verifica daca f(a) si f(p) au semne contrare, caz in care ra-
+dacina se afla in [a,p] si b devine p, sau nu caz in care radacina nu se afla in [a,p] si , cum radacina exista
+si este unica (intervalul initial [a,b] este obtinut din functia IntervaleValProprii(d,s,m) si delimiteaza o
+valoare proprie unica) , aceasta se va afla in [p,b] si a devine p. Algoritmul se repeta pana cand modulul lui 
+f(p) sau a lui b-a a atins tol.
+
+6) function [valp vecp]=PutereInv(d,s,h,y,maxIter,tol)
+- primeste ca parametri diagonala d, supradiagonala s, deplasarea h, aproximatia initiala a vectorului propriu y
+,numarul maxim de iteratii maxIter, precizia determinarii tol.
+- intoarce valoarea proprie cea mai apropiata de h (valp) si vectorul propriu cu norma 1 (vecp)
+- algoritmul se va executa de maxIter ori sau pana cand norma lui A*y-lambda*y<tol si contine pasii:
+	- se rezolva sistemul (A-h*In)z=On cu ajutorul metodei lui Thomas, matricea A-h*In fiind salvata in 
+	vectorii: diagonala principala d-h*ones(n,1) si supradiagonala s
+	-se normalizeaza vectorul propriu obtinut (z) (y=z/norm(z))
+	-se calculeaza valoarea proprie corespunzatoare vectorului propriu y cu formula valp=y'*A*y, adaptata
+	pentru o matrice tridiagonala simetrica (se stiu doar vectorii d si s):
+		valp+=y(i)*v(i) pentru i=1:n unde v este vectoru A*y si se calculeaza:
+		v(i)=s(i-1)*y(i-1)+d(i)*y(i)+s(i)*y(i+1) (pentru a nu lua separat cazurile i=1 si i=n, am 
+		adaugat 0 uri la inceputul si sfarsitul lui s si y (s=[0;s;0];y=[0;y;0];) astfel incat in for-
+		mule indicii lui s si y cresc cu 1 )
+	-se actualizeaza h cu valp 
+	-se verifica conditia norm(v-valp*vecp)<tol iar in cazul in care se respecta, se iese din bucla
+- sistemul (A-h*In)z=On se rezolva cu functia din fisierul Thomas.m care implementeza metoda Thomas:
+function x=Thomas(d,s,b)
+- prmieste ca parametri diagonala principala d, supradiagonala s si coloana termenilor liberi b
+- intoarce solutia ecuatiei A*x=0 (x)
+- se salveaza diagonala de sub cea principala in d (e novoie in cazul interschimbarii liniilor)
+- se efectueaza eliminarea gausiana pe liniile j=2:n (t=c(j-1)/d(j-1);d(j)-=t*s(j-1);b(j)-=t*b(j-1);), dar
+inainte de aceasta se verifica daca d(j-1) este diferit de zero. In cazul in care acesta este 0 se vor inter-
+schimba liniile consecutive j-1 si j (se interschimba valorile de pe b,c,s si d iar valoarea de pe s(j) se va
+salva intr-un vector aux)
+- se verifica daca ultima linie a SST obtinut e 0 (d(n)==0), caz in care aleg x(n)=1 sau nu 0, caz in care
+x(n)=b(n)/d(n)
+- se determina x(i) pentru i=n-1:-1:1
